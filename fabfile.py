@@ -5,13 +5,10 @@ from fabric.decorators import task
 
 import config
 
-#env.hosts = config.HOSTS
-env.hosts = ["206.189.140.116"]
+env.hosts = config.HOSTS
 
-# env.user = config.USER
-# env.password = config.PASSWORD
-env.user = "root"
-env.password = "ds@12527"
+env.user = config.USER
+env.password = config.PASSWORD
 
 class FabricException(Exception):
     pass
@@ -62,5 +59,5 @@ def run_server():
 				# Check if code is updated with git.
 				if update_code():
 					run ("./manage.py migrate_schemas --settings=testpress.settings.remote")
-					# run ("sudo supervisorctl restart gunicorn")
-					# run ("sudo supervisorctl restart celeryd")
+					run ("sudo supervisorctl restart gunicorn")
+					run ("sudo supervisorctl restart celeryd")
