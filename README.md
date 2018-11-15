@@ -13,6 +13,8 @@ Install Fabric using the following command.
 
 ```
   sudo apt-get install fabric
+  or
+  pip install fabric==1.10.2
 ```
 
 Open config.py file with any editor you prefer like(vim, nano or sublime) and update all the configurations.
