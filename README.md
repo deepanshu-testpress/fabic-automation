@@ -23,7 +23,7 @@ Open config.py file with any editor you prefer like(vim, nano or sublime) and up
 
 that's it. You are ready to go.
 
-**Note:** To run any command you need to use "fab" from the directory which contain "fabfile.py".
+**Note:** To run any command you need to use command "fab" from the directory which contain "fabfile.py".
 
 Now to see the list of commands you can use
 ```
