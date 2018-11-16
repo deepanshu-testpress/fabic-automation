@@ -11,12 +11,14 @@ env.hosts = config.HOSTS
 env.user = config.USER
 env.password = config.PASSWORD
 env.command_timeout = 30
+errors = {}
 
 PATH_TO_APP = "/home/ubuntu/workspace/testpress/testpress_python/testpress"
 PATH_TO_VIR_ENV = "export WORKON_HOME=/home/ubuntu/workspace/; . /usr/local/bin/virtualenvwrapper.sh; workon testpress"
 
 def rollback():
 	print ("********* Failed to execute deploy! ===> " + env.host_string)
+	print (errors)
 
 @contextmanager
 def failwrapper():
@@ -25,6 +27,7 @@ def failwrapper():
 	try:
 	    yield
 	except SystemExit as e:
+	    errors[env.host_string] = str(e.message)
 	    rollback()
 	    raise
 
@@ -61,8 +64,8 @@ def project():
     """
     with virtualenv():
     	with environmental_variable():
-    		with cd(PATH_TO_APP):
-    			yield
+	        with cd(PATH_TO_APP):
+	            yield
 
 @contextmanager
 def manage_output():
