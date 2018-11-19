@@ -3,6 +3,7 @@ PASSWORD = "xxx"
 
 LOCAL_HOSTS = ["xx.xx.xx.xx"]
 STAGING_HOSTS = ["xx.xx.xx.xx"]
+CELERY_HOSTS = ["xx.xx.xx.xx"]
 
 EMAIL_HOST = "xxx"
 EMAIL_PORT = "1"

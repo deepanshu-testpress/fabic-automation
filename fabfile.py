@@ -12,7 +12,8 @@ env.password = config.PASSWORD
 env.command_timeout = 30
 env.roledefs = {
 				"local" : config.LOCAL_HOSTS,
-				"staging" : config.STAGING_HOSTS
+				"staging" : config.STAGING_HOSTS,
+				"celery" : config.CELERY_HOSTS,
 			}
 errors = {}
 
@@ -87,6 +88,7 @@ def manage_fabric_execution():
 
 @task
 @parallel
+@roles("local", "staging", "celery")
 def update():
 	""" Fetch latest code from git.
 	"""
@@ -96,6 +98,7 @@ def update():
 
 @task
 @parallel
+@roles("local", "staging", "celery")
 def requirements():
 	""" Execute requirement files with pip.
 	"""
@@ -136,6 +139,7 @@ def execute_manage_staging(app, current_migration):
 
 @task
 @parallel
+@roles("local", "staging")
 def restart_gunicorn():
 	""" Restart gunicorn and celeryd on host.
 	"""
@@ -145,6 +149,7 @@ def restart_gunicorn():
 
 @task
 @parallel
+@roles("local")
 def restart_celeryd():
 	""" Restart gunicorn and celeryd on host.
 	"""
@@ -154,12 +159,23 @@ def restart_celeryd():
 
 @task
 @parallel
+@roles("celery")
+def restart_celery():
+	""" Restart gunicorn and celeryd on host.
+	"""
+	with manage_fabric_execution():
+		with virtualenv():
+			sudo ("supervisorctl restart celeryd_exams celeryd_email:* celeryd_pdf celeryd_bulk_email:* celeryd_beat:* celeryd_activity_feed:* celeryd_bulk_upload_questions celeryd_create_institute")
+
+@task
+@parallel
+@roles("local")
 def deploy():
 	""" Update code and restart server.
 	"""
 	update()
 	requirements()
-	execute_manage()
+	execute_manage_local()
 	restart_gunicorn()
 	restart_celeryd()
 	print ("********* Successfully deploy! ===> " + env.host_string)
@@ -176,6 +192,16 @@ def deploy_staging(app, current_migration):
 	"""
 	update()
 	requirements()
-	execute_manage_staging(app=app,current_migration=current_migration)
+	execute_manage_staging(app=app, current_migration=current_migration)
 	restart_gunicorn()
 	print ("********* Successfully deploy! ===> " + env.host_string)
+
+@task
+@parallel
+@roles("celery")
+def deploy_celery():
+	""" Update code and restart celery server.
+	"""
+	update()
+	requirements()
+	restart_celery()
