@@ -1,6 +1,8 @@
 USER = "abc"
 PASSWORD = "xxx"
-HOSTS = ["xx.xx.xx.xx:1234"]
+
+LOCAL_HOSTS = ["xx.xx.xx.xx"]
+STAGING_HOSTS = ["xx.xx.xx.xx"]
 
 EMAIL_HOST = "xxx"
 EMAIL_PORT = "1"

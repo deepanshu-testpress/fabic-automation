@@ -1,4 +1,4 @@
-from fabric.api import env, prompt, put, hide, run, local, prefix, sudo, settings, output
+from fabric.api import env, prompt, put, hide, run, local, prefix, sudo, settings, output, roles
 from contextlib import contextmanager
 from fabric.context_managers import cd, shell_env
 from fabric.decorators import task, parallel
@@ -7,10 +7,13 @@ import config
 
 output['aborts'] = False
 
-env.hosts = config.HOSTS
 env.user = config.USER
 env.password = config.PASSWORD
 env.command_timeout = 30
+env.roledefs = {
+				"local" : config.LOCAL_HOSTS,
+				"staging" : config.STAGING_HOSTS
+			}
 errors = {}
 
 PATH_TO_APP = "/home/ubuntu/workspace/testpress/testpress_python/testpress"
@@ -105,7 +108,8 @@ def requirements():
 
 @task
 @parallel
-def execute_manage():
+@roles("local")
+def execute_manage_local():
 	""" Execute 'manage' file of django testpress.
 	"""
 	with manage_fabric_execution():
@@ -114,14 +118,39 @@ def execute_manage():
 
 @task
 @parallel
-def restart():
+@roles("staging")
+def execute_manage_staging(app, current_migration):
+	""" Execute 'manage' file of django testpress on staging(Arguments:app, current_migration).
+
+	parameter:
+	app: In which app migration is updated.
+	current_migration: what is the new migration number.
+	"""
+	current_migration = int(current_migration)
+	with manage_fabric_execution():
+		with project():
+			run ("./manage.py migrate_schemas --fake apps." + app + " 00" + str(current_migration - 2) + " --settings=testpress.settings.local")
+			run ("./manage.py migrate_schemas --fake apps." + app + " 00" + str(current_migration - 1) + " --settings=testpress.settings.local")
+			run ("./manage.py migrate_schemas --fake apps." + app + " 00" + str(current_migration) + " --settings=testpress.settings.local")
+			run ("./manage.py migrate_schemas apps." + app + " 00" + str(current_migration) + " --settings=testpress.settings.local")
+
+@task
+@parallel
+def restart_gunicorn():
 	""" Restart gunicorn and celeryd on host.
 	"""
 	with manage_fabric_execution():
 		with virtualenv():
 			sudo ("supervisorctl restart gunicorn")
-			sudo ("supervisorctl restart celeryd")
 
+@task
+@parallel
+def restart_celeryd():
+	""" Restart gunicorn and celeryd on host.
+	"""
+	with manage_fabric_execution():
+		with virtualenv():
+			sudo ("supervisorctl restart gunicorn")
 
 @task
 @parallel
@@ -131,5 +160,22 @@ def deploy():
 	update()
 	requirements()
 	execute_manage()
-	restart()
+	restart_gunicorn()
+	restart_celeryd()
+	print ("********* Successfully deploy! ===> " + env.host_string)
+
+@task
+@parallel
+@roles("staging")
+def deploy_staging(app, current_migration):
+	""" Update code and restart staging server(Arguments:app, current_migration).
+
+	parameter:
+	app: In which app migration is updated.
+	current_migration: what is the new migration number.
+	"""
+	update()
+	requirements()
+	execute_manage_staging(app=app,current_migration=current_migration)
+	restart_gunicorn()
 	print ("********* Successfully deploy! ===> " + env.host_string)
